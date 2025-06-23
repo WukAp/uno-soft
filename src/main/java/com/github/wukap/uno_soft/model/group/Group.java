@@ -1,7 +1,6 @@
 package com.github.wukap.uno_soft.model.group;
 
-import com.github.wukap.uno_soft.model.group.condition.GroupConditions;
-import com.github.wukap.uno_soft.model.group.stringList.GroupLines;
+import com.github.wukap.uno_soft.model.group.stringList.SubGroup;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -11,46 +10,45 @@ import java.util.List;
 @Slf4j
 @Getter
 public final class Group {
-    private final GroupConditions groupConditions;
-    private final List<GroupLines> ItemList;
+    private final ArrayList<SubGroup> subGroupList;
+    private final int groupId;
+    private static int groupIdCounter = 0;
 
-    public Group(GroupConditions groupConditions, List<GroupLines> ItemList) {
-        this.groupConditions = groupConditions;
-        this.ItemList = ItemList;
+    public Group(ArrayList<SubGroup> subGroupList) {
+        this.subGroupList = subGroupList;
+        this.groupId = groupIdCounter++;
     }
 
-    public Group(GroupLines stringItemList) {
-        this(GroupConditions.ofGroupLines(stringItemList), List.of(stringItemList));
-    }
-
-    public Group(ArrayList<String> line) {
-        this(GroupConditions.ofLine(line), List.of(GroupLines.ofLine(line)));
+    public static Group ofLine(ArrayList<String> line) {
+        ArrayList<SubGroup> subGroupList = new ArrayList<>(){{
+            add(SubGroup.ofLine(line, groupIdCounter));
+        }};
+        return new Group(subGroupList);
     }
 
     public void join(final Group group) {
-        groupConditions.join(group.groupConditions);
-        ItemList.addAll(group.ItemList);
+        group.subGroupList.forEach(subGroup -> subGroup.setGroupId(groupId));
+        subGroupList.addAll(group.subGroupList);
     }
 
     public void add(final ArrayList<String> item) {
-        ItemList.getFirst().add(item);
-        groupConditions.join(GroupConditions.ofLine(item));
-    }
-
-    public boolean isMatch(final String item, final int columnIndex) {
-        return groupConditions.isMatch(item, columnIndex);
-    }
-
-    public boolean isMatch(final List<String> line) {
-        for (int i = 0; i < line.size(); i++) {
-            if (isMatch(line.get(i), i)) {
-                return true;
-            }
+        if (subGroupList.isEmpty()) {
+            subGroupList.add(SubGroup.ofLine(item, groupId));
+            return;
         }
-        return false;
+        subGroupList.getFirst().add(item);
     }
+
     public int getLength() {
-        return ItemList.stream().map(GroupLines::getLength).reduce(0, Integer::sum);
+        return subGroupList.stream().map(SubGroup::getLength).reduce(0, Integer::sum);
+    }
+
+    public SubGroup getSubGroup() {
+        if (subGroupList.isEmpty()) {
+            throw new IllegalStateException("subGroupList is empty");
+        } else {
+            return subGroupList.getFirst();
+        }
     }
 }
 

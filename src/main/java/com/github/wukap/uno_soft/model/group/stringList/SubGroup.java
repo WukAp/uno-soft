@@ -1,35 +1,40 @@
 package com.github.wukap.uno_soft.model.group.stringList;
 
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Objects;
 
-public class GroupLines {
+public class SubGroup {
     @Getter
     private final HashSet<ArrayList<String>> items;
     @Getter
     private int maxItemLength;
+    @Getter
+    @Setter
+    private int groupId;
 
-    public GroupLines() {
+    public SubGroup(int groupId) {
         maxItemLength = 0;
         items = new HashSet<>();
     }
 
-    public GroupLines(final HashSet<ArrayList<String>> items) {
+    public SubGroup(final HashSet<ArrayList<String>> items, int groupId) {
         if (items == null) {
             throw new IllegalArgumentException("items cannot be null");
         }
         this.items = items;
         items.forEach(this::updateMaxItemLength);
+        this.groupId = groupId;
     }
 
-    public static GroupLines ofLine(final ArrayList<String> line) {
+    public static SubGroup ofLine(final ArrayList<String> line, int groupId) {
         if (line == null) {
-            return new GroupLines(new HashSet<>());
+            return new SubGroup(new HashSet<>(), groupId);
         }
-        return new GroupLines(new HashSet<>() {{add(line);}});
+        return new SubGroup(new HashSet<>() {{add(line);}}, groupId);
     }
 
     public int getLength() {
@@ -51,5 +56,18 @@ public class GroupLines {
         if (item.size() > maxItemLength) {
             maxItemLength = item.size();
         }
+    }
+
+    @Override
+    public boolean equals(final Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        final SubGroup subGroup = (SubGroup) o;
+        return groupId == subGroup.groupId;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(groupId);
     }
 }

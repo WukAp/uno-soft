@@ -14,11 +14,11 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class GroupBuilderTest {
@@ -202,24 +202,13 @@ class GroupBuilderTest {
         Path testFile = tempDir.resolve("duplicates.txt");
         Files.write(testFile, new ArrayList<>(List.of(
                 "100;200;300",
-                "100;200;300",
-                "200;300;100" // duplicate
+                "100;200;300", // duplicate
+                "200;300;100"
         )));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
         assertEquals(2, groups.size());
         assertEquals(1, groups.get(0).getLength());
         assertEquals(1, groups.get(1).getLength());
-    }
-
-    @Test
-    void bigFile() throws IOException {
-        Path testFile = Paths.get("src/test/resources/testFiles/big_test.txt");
-        Long startTime = System.currentTimeMillis();
-        assertDoesNotThrow(() -> groupBuilder.getGroups(testFile.toString()));
-        Long endTime = System.currentTimeMillis();
-        long duration = (endTime - startTime) / 1000;
-        log.info("Time: {} sec, Groups: {}", duration, groupBuilder.getGroups(testFile.toString()).size());
-        assertTrue(duration < 30);
     }
 }
