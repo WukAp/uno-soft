@@ -1,28 +1,25 @@
 package com.github.wukap.uno_soft.model.group;
 
-import com.github.wukap.uno_soft.model.group.stringList.SubGroup;
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
-@Slf4j
 @Getter
 public final class Group {
     private final ArrayList<SubGroup> subGroupList;
     private final int groupId;
-    private static int groupIdCounter = 0;
+    private static final AtomicInteger groupIdCounter = new AtomicInteger(0);
 
     public Group(ArrayList<SubGroup> subGroupList) {
         this.subGroupList = subGroupList;
-        this.groupId = groupIdCounter++;
+        this.groupId = groupIdCounter.getAndIncrement();
     }
 
-    public static Group ofLine(ArrayList<String> line) {
-        ArrayList<SubGroup> subGroupList = new ArrayList<>(){{
-            add(SubGroup.ofLine(line, groupIdCounter));
-        }};
+    public static Group ofLine(List<String> line) {
+        ArrayList<SubGroup> subGroupList = new ArrayList<>();
+        subGroupList.add(SubGroup.ofLine(line, groupIdCounter.get()));
         return new Group(subGroupList);
     }
 
@@ -31,7 +28,7 @@ public final class Group {
         subGroupList.addAll(group.subGroupList);
     }
 
-    public void add(final ArrayList<String> item) {
+    public void add(final List<String> item) {
         if (subGroupList.isEmpty()) {
             subGroupList.add(SubGroup.ofLine(item, groupId));
             return;
@@ -43,7 +40,7 @@ public final class Group {
         return subGroupList.stream().map(SubGroup::getLength).reduce(0, Integer::sum);
     }
 
-    public SubGroup getSubGroup() {
+    public SubGroup getAnySubGroup() {
         if (subGroupList.isEmpty()) {
             throw new IllegalStateException("subGroupList is empty");
         } else {
@@ -51,8 +48,3 @@ public final class Group {
         }
     }
 }
-
-
-
-
-

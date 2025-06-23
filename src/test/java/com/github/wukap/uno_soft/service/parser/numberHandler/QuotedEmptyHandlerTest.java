@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 
 class QuotedEmptyHandlerTest {
     private final QuotedEmptyHandler handler = new QuotedEmptyHandler();
+
     @Test
     public void quotedEmptyString() {
         assertEquals("", handler.handle("\"\""));
@@ -16,6 +17,7 @@ class QuotedEmptyHandlerTest {
     public void quotedWhitespace() {
         assertEquals("", handler.handle("\"  \""));
     }
+
     @Test
     public void illegalQuoted() {
         assertNull(handler.handle("\""));

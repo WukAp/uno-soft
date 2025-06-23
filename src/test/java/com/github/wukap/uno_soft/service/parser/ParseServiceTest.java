@@ -26,7 +26,7 @@ class ParseServiceTest {
         QuotedNumberHandler quotedHandler = new QuotedNumberHandler();
         PlainNumberHandler plainHandler = new PlainNumberHandler();
         EmptyHandler emptyHandler = new EmptyHandler();
-        parseService = new ParseService(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler);
+        parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler));
     }
 
     static Stream<Object[]> validInputProvider() {
@@ -37,10 +37,10 @@ class ParseServiceTest {
                 new Object[]{"\"111\";\"123\";\"222\"", List.of("111", "123", "222")},
                 new Object[]{"111;\"222\"", List.of("111", "222")},
                 new Object[]{"\"111\";222", List.of("111", "222")},
-                new Object[]{"", List.of("")},
-                new Object[]{";;;", List.of("", "", "", "")},
-                new Object[]{"\"\"", List.of("")},
-                new Object[]{"\"\";\"\";\"\"", List.of("", "", "")},
+                new Object[]{"", null},
+                new Object[]{";;;", null},
+                new Object[]{"\"\"", null},
+                new Object[]{"\"\";\"\";\"\"", null},
                 new Object[]{"300;;100", List.of("300", "", "100")},
                 new Object[]{"200;123;100", List.of("200", "123", "100")},
                 new Object[]{"\"200\";\"123\";\"100\"", List.of("200", "123", "100")},
@@ -84,10 +84,6 @@ class ParseServiceTest {
     @NullAndEmptySource
     @ValueSource(strings = {" ", "   ", "\t", "\n"})
     void nullOrWhitespaceInputs(String input) {
-        if (input == null) {
-            assertNull(parseService.parse(null));
-        } else {
-            assertEquals(List.of(""), parseService.parse(input));
-        }
+            assertNull(parseService.parse(input));
     }
 }

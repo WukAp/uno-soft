@@ -9,16 +9,13 @@ import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedNumberHandle
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 class GroupBuilderTimeTest {
@@ -32,7 +29,7 @@ class GroupBuilderTimeTest {
         QuotedEmptyHandler quotedEmptyHandler = new QuotedEmptyHandler();
         PlainNumberHandler plainHandler = new PlainNumberHandler();
         QuotedNumberHandler quotedHandler = new QuotedNumberHandler();
-        parseService = new ParseService(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler);
+        parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler));
         groupBuilder = new GroupBuilder(parseService);
     }
 

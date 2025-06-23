@@ -1,67 +1,31 @@
 package com.github.wukap.uno_soft.model.group.condition;
 
-import com.github.wukap.uno_soft.model.group.stringList.SubGroup;
+import com.github.wukap.uno_soft.model.group.Group;
+import com.github.wukap.uno_soft.model.group.SubGroup;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
+import java.util.*;
 
 public class ConditionsMap {
     private final ArrayList<HashMap<String, SubGroup>> groupConditions;
-
-    private ConditionsMap(final ArrayList<HashMap<String, SubGroup>> conditions) {
-        this.groupConditions = conditions;
-    }
 
     public ConditionsMap() {
         this.groupConditions = new ArrayList<>();
     }
 
-    public static ConditionsMap ofSubGroup(SubGroup subGroup) {
-        if (subGroup == null || subGroup.getLength() == 0) {
-            return new ConditionsMap(new ArrayList<>());
-        }
-        int columnsCount = subGroup.getMaxItemLength();
-        ArrayList<HashMap<String, SubGroup>> conditions = new ArrayList<>();
-        for (int i = 0; i < columnsCount; i++) {
-            HashMap<String, SubGroup> condMap = new HashMap<>();
-            for (ArrayList<String> item : subGroup.getItems()) {
-                String key = item.get(i);
-                put(condMap, key, subGroup);
-            }
-            conditions.add(condMap);
-        }
-        return new ConditionsMap(conditions);
-    }
-
-    public static ConditionsMap ofLine(List<String> line, SubGroup subGroup) {
-        if (line == null) {
-            return new ConditionsMap(new ArrayList<>());
-        }
-        ArrayList<HashMap<String, SubGroup>> conditions = new ArrayList<>();
-        for (String string : line) {
-            HashMap<String, SubGroup> condMap = new HashMap<>();
-            put(condMap, string, subGroup);
-            conditions.add(condMap);
-        }
-        return new ConditionsMap(conditions);
-    }
-
-    public void addConditions(final List<String> line, final SubGroup subGroup) {
+    public void addConditions(final List<String> line, final Group group) {
         for (int i = 0; i < line.size(); i++) {
             if (groupConditions.size() <= i) {
                 groupConditions.add(new HashMap<>());
             }
-            put(groupConditions.get(i), line.get(i), subGroup);
+            put(groupConditions.get(i), line.get(i), group.getAnySubGroup());
         }
     }
 
-    public HashSet<SubGroup> getMatchedGroups(final List<String> line) {
-        HashSet<SubGroup> matchedGroups = new HashSet<>();
-        for (int i = 0; i < line.size(); i++) {
+    public Set<Integer> getMatchedGroupsId(final List<String> line) {
+        Set<Integer> matchedGroups = new HashSet<>();
+        for (int i = 0; i < line.size() && i < groupConditions.size(); i++) {
             if (isMatch(line.get(i), i)) {
-                matchedGroups.add(groupConditions.get(i).get(line.get(i)));
+                matchedGroups.add(groupConditions.get(i).get(line.get(i)).getGroupId());
             }
         }
         return matchedGroups;

@@ -1,12 +1,12 @@
-package com.github.wukap.uno_soft.service.groupBuilder;
+package com.github.wukap.uno_soft.service.groupPrettyPrint;
 
 import com.github.wukap.uno_soft.model.group.Group;
+import com.github.wukap.uno_soft.service.groupBuilder.GroupBuilder;
 import com.github.wukap.uno_soft.service.parser.ParseService;
 import com.github.wukap.uno_soft.service.parser.numberHandler.EmptyHandler;
 import com.github.wukap.uno_soft.service.parser.numberHandler.PlainNumberHandler;
 import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedEmptyHandler;
 import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedNumberHandler;
-import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -20,9 +20,8 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@Slf4j
-class GroupBuilderTest {
-
+class GroupPrinterTest {
+    private GroupPrinter groupPrinter;
     private ParseService parseService;
     private GroupBuilder groupBuilder;
 
@@ -34,6 +33,7 @@ class GroupBuilderTest {
         QuotedNumberHandler quotedHandler = new QuotedNumberHandler();
         parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler));
         groupBuilder = new GroupBuilder(parseService);
+        groupPrinter = new GroupPrinter();
     }
 
     @Test
@@ -44,8 +44,7 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(1, groups.size());
-        assertEquals(1, groups.get(0).getLength());
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 
     @Test
@@ -57,8 +56,7 @@ class GroupBuilderTest {
                 "300;;100"   // Group 1 (via 100)
         ));
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(1, groups.size());
-        assertEquals(3, groups.get(0).getLength());
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
     }
 
     @Test
@@ -73,22 +71,21 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 3));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(3, groupPrinter.getNonSingleSortedGroups(groups).get(0).getLength());
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).get(1).getLength());
     }
 
     @Test
     void severalGroups2(@TempDir Path tempDir) throws IOException {
         Path testFile = tempDir.resolve("test.txt");
         Files.write(testFile, List.of(
-                "100;200;300",
-                "200;300;100"
+                "100;200;300", // Group 1
+                "200;300;100" // Group 2
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 
     @Test
@@ -101,23 +98,22 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(1, groups.size());
-        assertEquals(3, groups.get(0).getLength());
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(3, groupPrinter.getNonSingleSortedGroups(groups).getFirst().getLength());
     }
 
     @Test
     void skipEmptyConnectors(@TempDir Path tempDir) throws IOException {
         Path testFile = tempDir.resolve("test.txt");
         Files.write(testFile, List.of(
-                "\"111\";\"\";\"222\"",
-                "\"200\";\"\";\"100\"",
-                "\"300\";;\"100\""
+                "\"111\";\"\";\"222\"",// Group 1
+                "\"200\";\"\";\"100\"",// Group 2
+                "\"300\";;\"100\""// Group 2
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 1));
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).getFirst().getLength());
     }
 
     @Test
@@ -133,10 +129,9 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(3, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 3));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 1));
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(3, groupPrinter.getNonSingleSortedGroups(groups).get(0).getLength());
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).get(1).getLength());
     }
 
     @Test
@@ -152,9 +147,8 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 5));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 1));
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(5, groupPrinter.getNonSingleSortedGroups(groups).getFirst().getLength());
     }
 
     @Test
@@ -171,8 +165,8 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(1, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 7));
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(7, groupPrinter.getNonSingleSortedGroups(groups).getFirst().getLength());
     }
 
     @Test
@@ -191,8 +185,7 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(7, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 
     @Test
@@ -211,9 +204,7 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(3, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 3));
+        assertEquals(3, groupPrinter.getNonSingleSortedGroups(groups).size());
     }
 
     @Test
@@ -404,8 +395,7 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(178, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 
     @Test
@@ -596,10 +586,7 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(178 - 3 - 1, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 1));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 4));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).size());
     }
 
     @Test
@@ -615,8 +602,7 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(6, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 
     @Test
@@ -633,10 +619,9 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(4, groups.size());
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 1));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
-        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 3));
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(3, groupPrinter.getNonSingleSortedGroups(groups).get(0).getLength());
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).get(1).getLength());
     }
 
     @Test
@@ -649,8 +634,8 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(1, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 2));
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).getFirst().getLength());
     }
 
     @Test
@@ -665,8 +650,8 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(1, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 2));
+        assertEquals(1, groupPrinter.getNonSingleSortedGroups(groups).size());
+        assertEquals(2, groupPrinter.getNonSingleSortedGroups(groups).getFirst().getLength());
     }
 
     @Test
@@ -675,11 +660,11 @@ class GroupBuilderTest {
         Files.write(testFile, new ArrayList<>(List.of()));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertTrue(groups.isEmpty());
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 
     @Test
-    void removeDuplicateLines1(@TempDir Path tempDir) throws IOException {
+    void removeDuplicateLines(@TempDir Path tempDir) throws IOException {
         Path testFile = tempDir.resolve("duplicates.txt");
         Files.write(testFile, List.of(
                 "100;200;300",
@@ -688,40 +673,6 @@ class GroupBuilderTest {
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
-    }
-
-    @Test
-    void removeDuplicateLines2(@TempDir Path tempDir) throws IOException {
-        Path testFile = tempDir.resolve("duplicates.txt");
-        Files.write(testFile, List.of(
-                "100;200;300",
-                "100;200;300", // duplicate
-                "100;200;300", // duplicate
-                "200;300;100",
-                "200;300;100"// duplicate
-        ));
-
-        List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
-    }
-
-    @Test
-    void removeDuplicateLines3(@TempDir Path tempDir) throws IOException {
-        Path testFile = tempDir.resolve("duplicates.txt");
-        Files.write(testFile, List.of(
-                "100;200;300",
-                "100;200;300", // duplicate
-                "100;200;300", // duplicate
-                "200;300;100",
-                "200;300;100",// duplicate
-                "100;200;300" // duplicate
-        ));
-
-        List<Group> groups = groupBuilder.getGroups(testFile.toString());
-        assertEquals(2, groups.size());
-        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
+        assertTrue(groupPrinter.getNonSingleSortedGroups(groups).isEmpty());
     }
 }

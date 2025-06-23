@@ -2,23 +2,17 @@ package com.github.wukap.uno_soft.service.groupBuilder;
 
 import com.github.wukap.uno_soft.model.group.Group;
 import com.github.wukap.uno_soft.model.group.condition.ConditionsMap;
-import com.github.wukap.uno_soft.model.group.stringList.SubGroup;
 import com.github.wukap.uno_soft.service.parser.ParseService;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.stream.Collectors;
+import java.util.*;
 import java.util.stream.Stream;
 
 @Service
-@Slf4j
 public class GroupBuilder {
     private final ParseService parseService;
 
@@ -29,48 +23,44 @@ public class GroupBuilder {
     public List<Group> getGroups(String stringPath) {
         Path path = Path.of(stringPath);
         if (!Files.exists(path)) {
-            log.error("File{} not found", path);
+            System.err.println("File " + path + " not found");
             throw new IllegalArgumentException("File " + path + " not found");
         }
         return getGroups(path);
     }
 
     public List<Group> getGroups(Path path) {
-        List<Group> groups = new ArrayList<>();
+        Map<Integer, Group> groupsMap = new HashMap<>();
+        ;
         ConditionsMap conditionsMap = new ConditionsMap();
         try (Stream<String> lines = Files.lines(path)) {
             lines.map(parseService::parse)
                     .filter(Objects::nonNull)
                     .forEach(line -> {
-                        log.info("Processing line: {}", line);
-                        applyLineToGroup(line, conditionsMap, groups);
+                        applyLineToGroup(line, conditionsMap, groupsMap);
                     });
         } catch (IOException e) {
-            log.error("Error while processing file: {}", e.getMessage());
-            throw new RuntimeException("File processing failed", e);
+            System.err.println("Error while processing file: " + e.getMessage());
+            throw new UncheckedIOException("Failed to process file: " + path, e);
         }
-        return groups;
+        return groupsMap.values().stream().toList();
     }
 
-    private void applyLineToGroup(ArrayList<String> line, ConditionsMap conditionsMap, List<Group> groups) {
-        List<SubGroup> containedSubGroups = conditionsMap.getMatchedGroups(line).stream().toList();
-        if (containedSubGroups.isEmpty()) {
+    private void applyLineToGroup(List<String> line, ConditionsMap conditionsMap, Map<Integer, Group> groupsMap) {
+        List<Integer> containedGroupIds = new ArrayList<>(conditionsMap.getMatchedGroupsId(line));
+        if (containedGroupIds.isEmpty()) {
             Group group = Group.ofLine(line);
-            groups.add(group);
-            conditionsMap.addConditions(line, group.getSubGroup());
-        } else if (containedSubGroups.size() == 1) {
-            SubGroup subGroup = containedSubGroups.getFirst();
-            subGroup.add(line);
-            conditionsMap.addConditions(line, subGroup);
-        } else {
-            HashSet<Integer> containedGroupIds = containedSubGroups.stream().map(SubGroup::getGroupId).collect(Collectors.toCollection(HashSet::new));
-            List<Group> containedGroups = groups.stream().filter(group -> containedGroupIds.contains(group.getGroupId())).toList();
-            List<Group> toBeRemoved = containedGroups.subList(1, containedGroups.size());
-            Group mainGroup = containedGroups.getFirst();
-            groups.removeAll(toBeRemoved);
-            mainGroup.add(line);
-            conditionsMap.addConditions(line, mainGroup.getSubGroup());
-            toBeRemoved.forEach(mainGroup::join);
+            groupsMap.put(group.getGroupId(), group);
+            conditionsMap.addConditions(line, group);
+            return;
+        }
+        Group mainGroup = groupsMap.get(containedGroupIds.getFirst());
+        mainGroup.add(line);
+        conditionsMap.addConditions(line, mainGroup);
+        if (containedGroupIds.size() > 1) {
+            List<Integer> toBeRemoved = containedGroupIds.subList(1, containedGroupIds.size());
+            toBeRemoved.forEach(groupId -> mainGroup.join(groupsMap.get(groupId)));
+            groupsMap.entrySet().removeIf(entry -> toBeRemoved.contains(entry.getKey()));
         }
     }
 }
