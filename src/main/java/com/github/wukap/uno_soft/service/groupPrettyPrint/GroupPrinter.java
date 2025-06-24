@@ -9,6 +9,7 @@ import java.util.List;
 @Service
 public class GroupPrinter {
     public void print(List<Group> groups) {
+        System.out.println("Groups amount: " + groups.size());
         for (int i = 0; i < groups.size(); i++) {
             System.out.printf("Group %d [size: %d]:%n", i + 1, groups.get(i).getLength());
             groups.get(i).getSubGroupList().forEach(subGroup -> {
