@@ -13,7 +13,7 @@ public class PlainNumberHandler extends BaseNumberHandler {
 
     @Override
     public String handle(String input) {
-        Matcher matcher = PLAIN_NUMBER_PATTERN.matcher(input.trim());
+        Matcher matcher = PLAIN_NUMBER_PATTERN.matcher(input);
         if (matcher.matches()) {
             return matcher.group(1);
         }

@@ -2,10 +2,7 @@ package com.github.wukap.uno_soft.service.groupBuilder;
 
 import com.github.wukap.uno_soft.model.group.Group;
 import com.github.wukap.uno_soft.service.parser.ParseService;
-import com.github.wukap.uno_soft.service.parser.numberHandler.EmptyHandler;
-import com.github.wukap.uno_soft.service.parser.numberHandler.PlainNumberHandler;
-import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedEmptyHandler;
-import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedNumberHandler;
+import com.github.wukap.uno_soft.service.parser.numberHandler.*;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -28,11 +25,13 @@ class GroupBuilderTest {
 
     @BeforeEach
     void setUp() {
-        EmptyHandler emptyHandler = new EmptyHandler();
-        QuotedEmptyHandler quotedEmptyHandler = new QuotedEmptyHandler();
-        PlainNumberHandler plainHandler = new PlainNumberHandler();
-        QuotedNumberHandler quotedHandler = new QuotedNumberHandler();
-        parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler));
+        NumberHandler emptyHandler = new EmptyHandler();
+        NumberHandler quotedEmptyHandler = new QuotedEmptyHandler();
+        NumberHandler plainHandler = new PlainNumberHandler();
+        NumberHandler quotedHandler = new QuotedNumberHandler();
+        NumberHandler quotedFloatHandler = new QuotedFloatHandler();
+        NumberHandler plainFloatHandler = new PlainFloatHandler();
+        parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler, quotedFloatHandler, plainFloatHandler));
         groupBuilder = new GroupBuilder(parseService);
     }
 
@@ -41,6 +40,18 @@ class GroupBuilderTest {
         Path testFile = tempDir.resolve("test.txt");
         Files.write(testFile, List.of(
                 "111;123;222"
+        ));
+
+        List<Group> groups = groupBuilder.getGroups(testFile.toString());
+        assertEquals(1, groups.size());
+        assertEquals(1, groups.get(0).getLength());
+    }
+
+    @Test
+    void singleDoubleGroup1(@TempDir Path tempDir) throws IOException {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.write(testFile, List.of(
+                "111.1;123.3;222.2"
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());
@@ -61,6 +72,20 @@ class GroupBuilderTest {
         assertEquals(3, groups.get(0).getLength());
     }
 
+
+    @Test
+    void singleDoubleGroup2(@TempDir Path tempDir) throws IOException {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.write(testFile, List.of(
+                "111;123.2;222",// Group 1
+                "200;123.2;100",// Group 1 (via 123)
+                "300;;100"   // Group 1 (via 100)
+        ));
+        List<Group> groups = groupBuilder.getGroups(testFile.toString());
+        assertEquals(1, groups.size());
+        assertEquals(3, groups.get(0).getLength());
+    }
+
     @Test
     void severalGroups1(@TempDir Path tempDir) throws IOException {
         Path testFile = tempDir.resolve("merge.txt");
@@ -68,6 +93,22 @@ class GroupBuilderTest {
                 "111;123;222",  // Group 1
                 "200;123;100",   // Group 1 (via 123)
                 "300;;100",      // Group 1 (via 100)
+                "400;500;600",   // Group 2
+                "700;500;800"    // Group 2 (via 500)
+        ));
+
+        List<Group> groups = groupBuilder.getGroups(testFile.toString());
+        assertEquals(2, groups.size());
+        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 3));
+        assertTrue(groups.stream().anyMatch(g -> g.getLength() == 2));
+    }
+    @Test
+    void severalFloatGroups1(@TempDir Path tempDir) throws IOException {
+        Path testFile = tempDir.resolve("merge.txt");
+        Files.write(testFile, List.of(
+                "111.1;123;222",  // Group 1
+                "200;123;100.10",   // Group 1 (via 123)
+                "300;;100.1",      // Group 1 (via 100)
                 "400;500;600",   // Group 2
                 "700;500;800"    // Group 2 (via 500)
         ));
@@ -92,12 +133,38 @@ class GroupBuilderTest {
     }
 
     @Test
+    void severalFloatGroups2(@TempDir Path tempDir) throws IOException {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.write(testFile, List.of(
+                "100;200.2;300",
+                "200;200.3;100"
+        ));
+
+        List<Group> groups = groupBuilder.getGroups(testFile.toString());
+        assertEquals(2, groups.size());
+        assertTrue(groups.stream().allMatch(g -> g.getLength() == 1));
+    }
+
+    @Test
     void quotedValues1(@TempDir Path tempDir) throws IOException {
         Path testFile = tempDir.resolve("test.txt");
         Files.write(testFile, List.of(
                 "\"111\";\"123\";\"222\"",
                 "\"200\";\"123\";\"100\"",
                 "\"300\";;\"100\""
+        ));
+
+        List<Group> groups = groupBuilder.getGroups(testFile.toString());
+        assertEquals(1, groups.size());
+        assertEquals(3, groups.get(0).getLength());
+    }
+    @Test
+    void quotedFloatValues1(@TempDir Path tempDir) throws IOException {
+        Path testFile = tempDir.resolve("test.txt");
+        Files.write(testFile, List.of(
+                "\"111\";\"123.1\";\"222\"",
+                "\"200\";\"123.100\";\"100\"",
+                "\"300\";;\"100.0\""
         ));
 
         List<Group> groups = groupBuilder.getGroups(testFile.toString());

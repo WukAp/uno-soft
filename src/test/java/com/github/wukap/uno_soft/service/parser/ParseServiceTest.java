@@ -1,9 +1,6 @@
 package com.github.wukap.uno_soft.service.parser;
 
-import com.github.wukap.uno_soft.service.parser.numberHandler.EmptyHandler;
-import com.github.wukap.uno_soft.service.parser.numberHandler.PlainNumberHandler;
-import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedEmptyHandler;
-import com.github.wukap.uno_soft.service.parser.numberHandler.QuotedNumberHandler;
+import com.github.wukap.uno_soft.service.parser.numberHandler.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -22,11 +19,13 @@ class ParseServiceTest {
 
     @BeforeEach
     void setUp() {
-        QuotedEmptyHandler quotedEmptyHandler = new QuotedEmptyHandler();
-        QuotedNumberHandler quotedHandler = new QuotedNumberHandler();
-        PlainNumberHandler plainHandler = new PlainNumberHandler();
-        EmptyHandler emptyHandler = new EmptyHandler();
-        parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler));
+        NumberHandler emptyHandler = new EmptyHandler();
+        NumberHandler quotedEmptyHandler = new QuotedEmptyHandler();
+        NumberHandler plainHandler = new PlainNumberHandler();
+        NumberHandler quotedHandler = new QuotedNumberHandler();
+        NumberHandler quotedFloatHandler = new QuotedFloatHandler();
+        NumberHandler plainFloatHandler = new PlainFloatHandler();
+        parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler, quotedFloatHandler, plainFloatHandler));
     }
 
     static Stream<Object[]> validInputProvider() {
@@ -36,6 +35,7 @@ class ParseServiceTest {
                 new Object[]{"111;123;222", List.of("111", "123", "222")},
                 new Object[]{"\"111\";\"123\";\"222\"", List.of("111", "123", "222")},
                 new Object[]{"111;\"222\"", List.of("111", "222")},
+                new Object[]{"\"111.1\";222", List.of("111.1", "222")},
                 new Object[]{"\"111\";222", List.of("111", "222")},
                 new Object[]{"", null},
                 new Object[]{";;;", null},

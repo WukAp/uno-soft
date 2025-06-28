@@ -30,7 +30,7 @@ public class ParseService {
         List<String> result = new ArrayList<>(parts.length);
 
         for (String part : parts) {
-            String parsed = chain.handle(part);
+            String parsed = chain.handle(part.trim());
             if (parsed == null) {
                 return null;
             }

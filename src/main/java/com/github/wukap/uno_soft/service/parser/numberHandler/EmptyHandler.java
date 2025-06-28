@@ -8,8 +8,7 @@ import org.springframework.stereotype.Component;
 public class EmptyHandler extends BaseNumberHandler {
     @Override
     public String handle(String input) {
-        String trimmed = input.trim();
-        if (trimmed.isEmpty()) {
+        if (input.isEmpty()) {
             return "";
         }
         return toNext(input);

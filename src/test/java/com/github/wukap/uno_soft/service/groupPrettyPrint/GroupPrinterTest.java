@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class GroupPrinterTest {
-    private GroupPrinter groupPrinter;
+    private GroupFileWriter groupPrinter;
     private ParseService parseService;
     private GroupBuilder groupBuilder;
 
@@ -33,7 +33,7 @@ class GroupPrinterTest {
         QuotedNumberHandler quotedHandler = new QuotedNumberHandler();
         parseService = new ParseService(List.of(emptyHandler, quotedEmptyHandler, plainHandler, quotedHandler));
         groupBuilder = new GroupBuilder(parseService);
-        groupPrinter = new GroupPrinter();
+        groupPrinter = new GroupFileWriter("");
     }
 
     @Test

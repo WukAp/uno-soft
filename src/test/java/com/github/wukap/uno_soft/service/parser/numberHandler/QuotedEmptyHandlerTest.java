@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 class QuotedEmptyHandlerTest {
-    private final QuotedEmptyHandler handler = new QuotedEmptyHandler();
+    private final NumberHandler handler = new QuotedEmptyHandler();
 
     @Test
     public void quotedEmptyString() {
@@ -22,5 +22,11 @@ class QuotedEmptyHandlerTest {
     public void illegalQuoted() {
         assertNull(handler.handle("\""));
         assertNull(handler.handle("\"  "));
+    }
+
+    @Test
+    public void nonEmpty() {
+        assertNull(handler.handle("42"));
+        assertNull(handler.handle("111.1"));
     }
 }

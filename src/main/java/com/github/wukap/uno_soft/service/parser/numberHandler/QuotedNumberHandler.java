@@ -13,7 +13,7 @@ public class QuotedNumberHandler extends BaseNumberHandler {
 
     @Override
     public String handle(String input) {
-        Matcher matcher = QUOTED_NUMBER_PATTERN.matcher(input.trim());
+        Matcher matcher = QUOTED_NUMBER_PATTERN.matcher(input);
         if (matcher.matches()) {
             return matcher.group(1);
         }
